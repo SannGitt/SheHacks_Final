@@ -13,7 +13,7 @@ st.sidebar.header("🔍 Select Your Preferences")
 
 # 📌 Stock Selection
 stocks_input = st.sidebar.text_input(
-    "Select Stocks (comma-separated, e.g., AAPL, MSFT, TSLA)", 
+    "Select Stocks (comma-separated, e.g., AAPL, MSFT, TSLA)",
     placeholder="Example: AAPL, TSLA, GOOGL"
 )
 
@@ -31,84 +31,85 @@ selected_stock = st.sidebar.text_input(
 
 # 📌 Ensure user input before showing recommendations
 if st.sidebar.button("🎯 Generate Recommendations"):
-    if not stocks_input:
-        st.sidebar.warning("⚠️ Please enter at least one stock.")
-    elif risk_tolerance == "Select":
-        st.sidebar.warning("⚠️ Please choose your risk tolerance level.")
-    else:
-        stocks = [s.strip().upper() for s in stocks_input.split(",") if s.strip()]
+  if not stocks_input:
+    st.sidebar.warning("⚠️ Please enter at least one stock.")
+  elif risk_tolerance == "Select":
+    st.sidebar.warning("⚠️ Please choose your risk tolerance level.")
+  else:
+    stocks = [s.strip().upper() for s in stocks_input.split(",") if s.strip()]
 
-        # Function to Fetch Stock Data
-        def get_stock_data(tickers):
-            data = []
-            np.random.seed(42)  # Ensure reproducibility
-            
-            for ticker in tickers:
-                try:
-                    stock = yf.Ticker(ticker)
-                    hist = stock.history(period="6mo")  
-                    if not hist.empty:
-                        last_price = hist['Close'].iloc[-1]
-                        volatility = hist['Close'].pct_change().std()
+    # Function to Fetch Stock Data
+    def get_stock_data(tickers):
+      data = []
+      np.random.seed(42)  # Ensure reproducibility
 
-                        # Generate Sentiment Score & Risk Cluster
-                        sentiment_score = np.round(np.random.uniform(-1, 1), 2)
-                        risk_cluster = np.random.choice(["Low Risk", "Medium Risk", "High Risk"])
+      for ticker in tickers:
+        try:
+          stock = yf.Ticker(ticker)
+          hist = stock.history(period="6mo")
+          if not hist.empty:
+            last_price = hist['Close'].iloc[-1]
+            volatility = hist['Close'].pct_change().std()
 
-                        data.append({
-                            "Stock": ticker, 
-                            "Price (USD)": round(last_price, 2), 
-                            "Volatility": round(volatility, 4),
-                            "Sentiment Score": f"{sentiment_score} ({'Bullish' if sentiment_score > 0 else 'Bearish'})",
-                            "Risk Cluster": risk_cluster
-                        })
-                except Exception as e:
-                    st.warning(f"Could not fetch data for {ticker}: {e}")
-            
-            return pd.DataFrame(data)
+            # Generate Sentiment Score & Risk Cluster
+            # sentiment_score = np.round(np.random.uniform(-1, 1), 2)
+            risk_cluster = np.random.choice(["Low Risk", "Medium Risk", "High Risk"])
 
-        # Fetch Market Data
-        market_data = get_stock_data(stocks)
+            data.append({
+                "Stock": ticker,
+                "Price (USD)": round(last_price, 2),
+                "Volatility": round(volatility, 4),
+                # "Sentiment Score": f"{sentiment_score} ({'Bullish' if sentiment_score > 0 else 'Bearish'})",
+                "Risk Cluster": risk_cluster
+            })
+        except Exception as e:
+          st.warning(f"Could not fetch data for {ticker}: {e}")
 
-        # 🎯 Display Market Data with Sentiment Score & Risk Cluster
-        if not market_data.empty:
-            st.subheader("📊 AI-Based Investment Recommendations")
-            st.dataframe(market_data)
+      return pd.DataFrame(data)
 
-            # 🎯 AI Investment Recommendation Logic
-            st.subheader("🤖 Personalized Investment Recommendations")
-            recommended_stock = market_data.sort_values(by="Volatility", ascending=(risk_tolerance == "Low")).head(1)['Stock'].values[0]
-            st.success(f"✅ Based on your risk profile, we recommend: *{recommended_stock}*")
+    # Fetch Market Data
+    market_data = get_stock_data(stocks)
 
-            # 📊 Bar Chart for Stock Prices
-            st.subheader("📊 Live Stock Market Data")
-            fig = px.bar(
-                market_data, 
-                x="Stock", 
-                y="Price (USD)", 
-                color="Price (USD)", 
-                color_continuous_scale="bluered",
-                title="Stock Prices"
-            )
-            fig.update_layout(xaxis_title="Stock", yaxis_title="Price")
-            st.plotly_chart(fig)
+    # 🎯 Display Market Data with Sentiment Score & Risk Cluster
+    if not market_data.empty:
+      st.subheader("📊 AI-Based Investment Recommendations")
+      st.dataframe(market_data)
 
-        # 🎯 Stock Price Trend Visualization
-        if selected_stock:
-            st.subheader(f"📉 Stock Trend for {selected_stock.upper()}")
-            stock_data = yf.Ticker(selected_stock.upper()).history(period="6mo")
+      # 🎯 AI Investment Recommendation Logic
+      st.subheader("🤖 Personalized Investment Recommendations")
+      recommended_stock = market_data.sort_values(
+          by="Volatility", ascending=(risk_tolerance == "Low")).head(1)['Stock'].values[0]
+      st.success(f"✅ Based on your risk profile, we recommend: *{recommended_stock}*")
 
-            if not stock_data.empty:
-                fig = px.line(
-                    stock_data, 
-                    x=stock_data.index, 
-                    y="Close", 
-                    title=f"{selected_stock.upper()} Stock Price Trend"
-                )
-                fig.update_layout(xaxis_title="Date", yaxis_title="Price (USD)")
-                st.plotly_chart(fig)
-            else:
-                st.warning(f"No data available for {selected_stock.upper()}")
+      # 📊 Bar Chart for Stock Prices
+      st.subheader("📊 Live Stock Market Data")
+      fig = px.bar(
+          market_data,
+          x="Stock",
+          y="Price (USD)",
+          color="Price (USD)",
+          color_continuous_scale="bluered",
+          title="Stock Prices"
+      )
+      fig.update_layout(xaxis_title="Stock", yaxis_title="Price")
+      st.plotly_chart(fig)
+
+    # 🎯 Stock Price Trend Visualization
+    if selected_stock:
+      st.subheader(f"📉 Stock Trend for {selected_stock.upper()}")
+      stock_data = yf.Ticker(selected_stock.upper()).history(period="6mo")
+
+      if not stock_data.empty:
+        fig = px.line(
+            stock_data,
+            x=stock_data.index,
+            y="Close",
+            title=f"{selected_stock.upper()} Stock Price Trend"
+        )
+        fig.update_layout(xaxis_title="Date", yaxis_title="Price (USD)")
+        st.plotly_chart(fig)
+      else:
+        st.warning(f"No data available for {selected_stock.upper()}")
 
 # 💡 Disclaimer
 st.info("💡 Note: This tool fetches real-time data from Yahoo Finance. Always conduct your own research before investing!")
